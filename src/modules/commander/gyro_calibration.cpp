@@ -112,10 +112,10 @@ static calibrate_return gyro_calibration_worker(int cancel_sub, gyro_worker_data
 					Vector3f offset{0, 0, 0};
 					sensor_correction_sub.update(&sensor_correction);
 
-					if (sensor_correction.timestamp > 0) {
+					if (sensor_correction.timestamp > 0 && gyro_report.device_id != 0) {
 						for (uint8_t i = 0; i < MAX_GYROS; i++) {
 							if (sensor_correction.gyro_device_ids[i] == gyro_report.device_id) {
-								switch (sensor_correction.gyro_device_ids[i]) {
+								switch (i) {
 								case 0:
 									offset = Vector3f{sensor_correction.gyro_offset_0};
 									break;

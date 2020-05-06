@@ -424,7 +424,7 @@ static calibrate_return read_accelerometer_avg(float (&accel_avg)[MAX_ACCEL_SENS
 					Vector3f offset{0, 0, 0};
 					sensor_correction_sub.update(&sensor_correction);
 
-					if (sensor_correction.timestamp > 0) {
+					if (sensor_correction.timestamp > 0 && arp.device_id != 0) {
 						for (uint8_t i = 0; i < MAX_ACCEL_SENS; i++) {
 							if (sensor_correction.accel_device_ids[i] == arp.device_id) {
 								switch (i) {
