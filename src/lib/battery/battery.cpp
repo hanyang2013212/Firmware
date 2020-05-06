@@ -95,6 +95,9 @@ Battery::Battery(int index, ModuleParams *parent) :
 	_param_handles.r_internal_old = param_find("BAT_R_INTERNAL");
 	_param_handles.source_old = param_find("BAT_SOURCE");
 
+	(void)param_find("BAT_AVG_I_MC");
+	(void)param_find("BAT_AVG_I_FW");
+
 	updateParams();
 }
 
