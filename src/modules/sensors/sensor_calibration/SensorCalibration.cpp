@@ -145,76 +145,47 @@ void SensorCalibration::SensorCorrectionsUpdate(bool force)
 	// check if the selected sensor has updated
 	if (_sensor_correction_sub.updated() || force) {
 
+		// valid device id required
+		if (_device_id == 0) {
+			return;
+		}
+
 		sensor_correction_s corrections;
 
 		if (_sensor_correction_sub.copy(&corrections)) {
+			// find sensor_corrections index
+			for (int i = 0; i < MAX_SENSOR_COUNT; i++) {
+				if ((_type == SensorType::Accelerometer) && (corrections.accel_device_ids[i] == _device_id)) {
+					switch (i) {
+					case 0:
+						_thermal_offset = Vector3f{corrections.accel_offset_0};
+						return;
+					case 1:
+						_thermal_offset = Vector3f{corrections.accel_offset_1};
+						return;
+					case 2:
+						_thermal_offset = Vector3f{corrections.accel_offset_2};
+						return;
+					}
 
-			// selected sensor has changed, find updated index
-			if ((_corrections_selected_instance < 0) || force) {
-				_corrections_selected_instance = -1;
-
-				// find sensor_corrections index
-				for (int i = 0; i < MAX_SENSOR_COUNT; i++) {
-					switch (_type) {
-					case SensorType::Accelerometer:
-						if (corrections.accel_device_ids[i] == _device_id) {
-							_corrections_selected_instance = i;
-						}
-
-						break;
-
-					case SensorType::Gyroscope:
-						if (corrections.gyro_device_ids[i] == _device_id) {
-							_corrections_selected_instance = i;
-						}
-
-						break;
+				} else if ((_type == SensorType::Gyroscope) && (corrections.gyro_device_ids[i] == _device_id)) {
+					switch (i) {
+					case 0:
+						_thermal_offset = Vector3f{corrections.gyro_offset_0};
+						return;
+					case 1:
+						_thermal_offset = Vector3f{corrections.gyro_offset_1};
+						return;
+					case 2:
+						_thermal_offset = Vector3f{corrections.gyro_offset_2};
+						return;
 					}
 				}
 			}
-
-			switch (_type) {
-			case SensorType::Accelerometer:
-				switch (_corrections_selected_instance) {
-				case 0:
-					_thermal_offset = Vector3f{corrections.accel_offset_0};
-					return;
-				case 1:
-					_thermal_offset = Vector3f{corrections.accel_offset_1};
-					return;
-				case 2:
-					_thermal_offset = Vector3f{corrections.accel_offset_2};
-					return;
-				default:
-					PX4_ERR("invalid accel corrections index: %d, resetting", _corrections_selected_instance);
-					_corrections_selected_instance = -1;
-					_thermal_offset.zero();
-					return;
-				}
-
-				break;
-
-			case SensorType::Gyroscope:
-				switch (_corrections_selected_instance) {
-				case 0:
-					_thermal_offset = Vector3f{corrections.gyro_offset_0};
-					return;
-				case 1:
-					_thermal_offset = Vector3f{corrections.gyro_offset_1};
-					return;
-				case 2:
-					_thermal_offset = Vector3f{corrections.gyro_offset_2};
-					return;
-				default:
-					PX4_ERR("invalid gyro corrections index: %d, resetting", _corrections_selected_instance);
-					_corrections_selected_instance = -1;
-					_thermal_offset.zero();
-					return;
-				}
-
-				break;
-			}
 		}
+
+		// zero thermal offset if not found
+		_thermal_offset.zero();
 	}
 }
 
@@ -252,24 +223,20 @@ void SensorCalibration::ParametersUpdate()
 		_offset.zero();
 		_scale = Vector3f{1.f, 1.f, 1.f};
 	}
-
-	// temperature calibration disabled
-	if (_corrections_selected_instance < 0) {
-		_thermal_offset.zero();
-	}
 }
 
 void SensorCalibration::PrintStatus()
 {
-	PX4_INFO("%s %d offset: [%.4f %.4f %.4f]", SensorString(), _device_id,
-		 (double)_offset(0), (double)_offset(1), (double)_offset(2));
-
 	if (_type != SensorType::Gyroscope) {
-		PX4_INFO("%s %d scale: [%.4f %.4f %.4f]", SensorString(), _device_id,
-			 (double)_scale(0), (double)_scale(1), (double)_scale(2));
+		PX4_INFO("%s %d offset: [%.4f %.4f %.4f] scale: [%.4f %.4f %.4f]", SensorString(), _device_id,
+			 (double)_offset(0), (double)_offset(1), (double)_offset(2), (double)_scale(0), (double)_scale(1), (double)_scale(2));
+
+	} else {
+		PX4_INFO("%s %d offset: [%.4f %.4f %.4f]", SensorString(), _device_id,
+			 (double)_offset(0), (double)_offset(1), (double)_offset(2));
 	}
 
-	if (_corrections_selected_instance >= 0) {
+	if (_thermal_offset.norm() > 0.f) {
 		PX4_INFO("%s %d temperature offset: [%.3f %.3f %.3f]", SensorString(), _device_id,
 			 (double)_thermal_offset(0), (double)_thermal_offset(1), (double)_thermal_offset(2));
 	}

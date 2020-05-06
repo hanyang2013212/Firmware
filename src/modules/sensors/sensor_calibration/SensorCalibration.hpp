@@ -91,7 +91,6 @@ private:
 	matrix::Vector3f _thermal_offset{0.f, 0.f, 0.f};
 
 	uint32_t _device_id{0};
-	int8_t _corrections_selected_instance{-1};
 
 	const SensorType _type;
 
