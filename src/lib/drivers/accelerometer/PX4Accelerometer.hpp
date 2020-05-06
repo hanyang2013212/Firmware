@@ -37,13 +37,14 @@
 #include <lib/conversion/rotation.h>
 #include <lib/drivers/device/integrator.h>
 #include <lib/ecl/geo/geo.h>
+#include <px4_platform_common/module_params.h>
 #include <uORB/PublicationMulti.hpp>
 #include <uORB/topics/sensor_accel.h>
 #include <uORB/topics/sensor_accel_fifo.h>
 #include <uORB/topics/sensor_accel_integrated.h>
 #include <uORB/topics/sensor_accel_status.h>
 
-class PX4Accelerometer
+class PX4Accelerometer : public ModuleParams
 {
 public:
 	PX4Accelerometer(uint32_t device_id, ORB_PRIO priority = ORB_PRIO_DEFAULT, enum Rotation rotation = ROTATION_NONE);
@@ -93,7 +94,7 @@ private:
 
 	hrt_abstime	_status_last_publish{0};
 
-	Integrator		_integrator{2500, false};
+	Integrator		_integrator{5000, false}; // 200 Hz default
 
 	matrix::Vector3f _delta_velocity_prev{0.f, 0.f, 0.f};	// delta velocity from the previous IMU measurement
 	float _vibration_metric{0.f};	// high frequency vibration level in the IMU delta velocity data (m/s)
@@ -121,4 +122,8 @@ private:
 	uint8_t			_integrator_reset_samples{4};
 	uint8_t			_integrator_samples{0};
 	uint8_t			_integrator_fifo_samples{0};
+
+	DEFINE_PARAMETERS(
+		(ParamInt<px4::params::IMU_INTEG_RATE>) _param_imu_integ_rate
+	)
 };

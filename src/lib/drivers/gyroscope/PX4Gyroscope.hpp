@@ -95,7 +95,7 @@ private:
 
 	hrt_abstime	_status_last_publish{0};
 
-	Integrator		_integrator{2500, true};
+	Integrator		_integrator{5000, true}; // 200 Hz default
 
 	matrix::Vector3f _delta_angle_prev{0.f, 0.f, 0.f};	// delta angle from the previous IMU measurement
 	float _vibration_metric{0.f};	// high frequency vibration level in the IMU delta angle data (rad)
@@ -126,6 +126,7 @@ private:
 	uint8_t			_integrator_fifo_samples{0};
 
 	DEFINE_PARAMETERS(
-		(ParamInt<px4::params::IMU_GYRO_RATEMAX>) _param_imu_gyro_rate_max
+		(ParamInt<px4::params::IMU_GYRO_RATEMAX>) _param_imu_gyro_rate_max,
+		(ParamInt<px4::params::IMU_INTEG_RATE>) _param_imu_integ_rate
 	)
 };

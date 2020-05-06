@@ -31,47 +31,15 @@
  *
  ****************************************************************************/
 
-#include <mavsdk/mavsdk.h>
-#include <mavsdk/plugins/action/action.h>
-#include <mavsdk/plugins/telemetry/telemetry.h>
-#include <iostream>
-#include <string>
-#include "autopilot_tester.h"
-
-
-TEST_CASE("Offboard takeoff and land", "[multicopter][offboard][nogps]")
-{
-	AutopilotTester tester;
-	Offboard::PositionNEDYaw takeoff_position {0.0f, 0.0f, -2.0f, 0.0f};
-	tester.connect(connection_url);
-	tester.wait_until_ready_local_position_only();
-	tester.store_home();
-	tester.arm();
-	std::chrono::seconds goto_timeout = std::chrono::seconds(10);
-	tester.offboard_goto(takeoff_position, 0.5f, goto_timeout);
-	tester.offboard_land();
-	tester.wait_until_disarmed(goto_timeout);
-	tester.check_home_within(0.5f);
-}
-
-TEST_CASE("Offboard position control", "[multicopter][offboard][nogps]")
-{
-	AutopilotTester tester;
-	Offboard::PositionNEDYaw takeoff_position {0.0f, 0.0f, -2.0f, 0.0f};
-	Offboard::PositionNEDYaw setpoint_1 {0.0f, 5.0f, -2.0f, 180.0f};
-	Offboard::PositionNEDYaw setpoint_2 {5.0f, 5.0f, -4.0f, 180.0f};
-	Offboard::PositionNEDYaw setpoint_3 {5.0f, 0.0f, -4.0f, 90.0f};
-	tester.connect(connection_url);
-	tester.wait_until_ready_local_position_only();
-	tester.store_home();
-	tester.arm();
-	std::chrono::seconds goto_timeout = std::chrono::seconds(10);
-	tester.offboard_goto(takeoff_position, 0.5f, goto_timeout);
-	tester.offboard_goto(setpoint_1, 1.0f, goto_timeout);
-	tester.offboard_goto(setpoint_2, 1.0f, goto_timeout);
-	tester.offboard_goto(setpoint_3, 1.0f, goto_timeout);
-	tester.offboard_goto(takeoff_position, 0.2f, goto_timeout);
-	tester.offboard_land();
-	tester.wait_until_disarmed(goto_timeout);
-	tester.check_home_within(1.0f);
-}
+/**
+* IMU integration rate.
+*
+* The rate at which raw IMU data is integrated to produce delta angles and delta velocities.
+*
+* @min 100
+* @max 1000
+* @unit Hz
+* @reboot_required true
+* @group Sensors
+*/
+PARAM_DEFINE_INT32(IMU_INTEG_RATE, 200);

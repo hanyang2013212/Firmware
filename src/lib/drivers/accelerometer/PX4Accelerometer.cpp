@@ -64,6 +64,7 @@ static constexpr unsigned clipping(const int16_t samples[16], int16_t clip_limit
 }
 
 PX4Accelerometer::PX4Accelerometer(uint32_t device_id, ORB_PRIO priority, enum Rotation rotation) :
+	ModuleParams(nullptr),
 	_sensor_pub{ORB_ID(sensor_accel), priority},
 	_sensor_fifo_pub{ORB_ID(sensor_accel_fifo), priority},
 	_sensor_integrated_pub{ORB_ID(sensor_accel_integrated), priority},
@@ -75,6 +76,11 @@ PX4Accelerometer::PX4Accelerometer(uint32_t device_id, ORB_PRIO priority, enum R
 	_sensor_pub.advertise();
 	_sensor_integrated_pub.advertise();
 	_sensor_status_pub.advertise();
+
+	updateParams();
+
+	// set reasonable default, driver should be setting real value
+	set_update_rate(800);
 }
 
 PX4Accelerometer::~PX4Accelerometer()
@@ -100,11 +106,21 @@ void PX4Accelerometer::set_device_type(uint8_t devtype)
 
 void PX4Accelerometer::set_update_rate(uint16_t rate)
 {
-	_update_rate = rate;
-	const uint32_t update_interval = 1000000 / rate;
+	_update_rate = math::constrain((int)rate, 50, 32000);
 
-	// TODO: set this intelligently
-	_integrator_reset_samples = 2500 / update_interval;
+	// constrain IMU integration time 1-20 milliseconds (50-1000 Hz)
+	int32_t imu_integration_rate_hz = math::constrain(_param_imu_integ_rate.get(), 50, 1000);
+
+	if (imu_integration_rate_hz != _param_imu_integ_rate.get()) {
+		_param_imu_integ_rate.set(imu_integration_rate_hz);
+		_param_imu_integ_rate.commit_no_notification();
+	}
+
+	const float update_interval_us = 1e6f / _update_rate;
+	const float imu_integration_interval_us = 1e6f / (float)imu_integration_rate_hz;
+
+	_integrator_reset_samples = roundf(imu_integration_interval_us / update_interval_us);
+	_integrator.set_autoreset_interval(_integrator_reset_samples * update_interval_us);
 }
 
 void PX4Accelerometer::update(const hrt_abstime &timestamp_sample, float x, float y, float z)
@@ -350,8 +366,10 @@ void PX4Accelerometer::UpdateVibrationMetrics(const Vector3f &delta_velocity)
 
 void PX4Accelerometer::print_status()
 {
+#if !defined(CONSTRAINED_FLASH)
 	char device_id_buffer[80] {};
 	device::Device::device_id_print_buffer(device_id_buffer, sizeof(device_id_buffer), _device_id);
 	PX4_INFO("device id: %d (%s)", _device_id, device_id_buffer);
 	PX4_INFO("rotation: %d", _rotation);
+#endif // !CONSTRAINED_FLASH
 }
