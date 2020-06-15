@@ -179,7 +179,7 @@ private:
 		(ParamFloat<px4::params::MPC_THR_MAX>) _param_mpc_thr_max
 	);
 
-	control::BlockDerivative _vel_x_deriv; /**< velocity derivative in x */
+	control::BlockDeriv _vel_x_deriv; /**< velocity derivative in x */
 	control::BlockDerivative _vel_y_deriv; /**< velocity derivative in y */
 	control::BlockDerivative _vel_z_deriv; /**< velocity derivative in z */
 
